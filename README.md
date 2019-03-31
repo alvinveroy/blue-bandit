@@ -3,6 +3,8 @@
     * Note: Should port easily with other boards. See Zephyr supported boards.
 * Zephyr RTOS
 * Linux system
+* Arm Embedded Toolchain
+* Nordic JLink for flashing and cpu interface
 
 # Building
 * Assuming build on Linux type system. Can probably use cygwin on Windows, but not verified.
@@ -23,5 +25,5 @@ source <blue-bandit root>/zenv
  <blud-bandit root>/scripts/flash.sh 
  ```
   
-# blue-bandit
+# Blue Bandit
 Bluetooth 4 &amp; 5 packet sniffer and pen-tester
