@@ -30,7 +30,7 @@ source <blue-bandit root>/zenv
  <blud-bandit root>/scripts/flash.sh 
  ```
  
- # Errate to be abused
+ # Discovered Bluetooth Errata
  * BLE: CVE-2018-7252
-   * Announced during Defcon 2018.
+   * Demonstrated by Damien Cauquil during Defcon 2018
  
