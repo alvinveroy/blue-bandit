@@ -26,4 +26,4 @@ source <blue-bandit root>/zenv
  ```
   
 # Blue Bandit
-Bluetooth 4 &amp; 5 packet sniffer and pen-tester
+Battery powered mobile bluetooth pen-tester. Designed to conveniently hangout, say in your pocket, and autonomously pen-test bluetooth 4 & 5 devices in your vicinity. With the rise of IoT in common households, it will be interesting to see which products are doing their due diligence in protecting their consumers from security issues. This will strictly be "white-hat" i.e. any discovered security flaws will be temporarily giggled at, then promptly reported to its distributor. 
