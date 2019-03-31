@@ -1,3 +1,8 @@
+# Blue Bandit
+Battery powered mobile bluetooth pen-tester. Designed to conveniently hangout, say in your pocket, and autonomously pen-test bluetooth 4 & 5 devices in your vicinity. With the rise of IoT in common households, it will be interesting to see which products are doing their due diligence in protecting their consumers from security issues. This will strictly be "white-hat" i.e. any discovered security flaws will be temporarily giggled at, then promptly reported to its distributor. 
+
+Very open to collaboration. Get a message to me via git and lets talk!
+
 # Configuration
 * nrf52850 w/ pca10056 processor
     * Note: Should port easily with other boards. See Zephyr supported boards.
@@ -24,6 +29,4 @@ source <blue-bandit root>/zenv
  ```
  <blud-bandit root>/scripts/flash.sh 
  ```
-  
-# Blue Bandit
-Battery powered mobile bluetooth pen-tester. Designed to conveniently hangout, say in your pocket, and autonomously pen-test bluetooth 4 & 5 devices in your vicinity. With the rise of IoT in common households, it will be interesting to see which products are doing their due diligence in protecting their consumers from security issues. This will strictly be "white-hat" i.e. any discovered security flaws will be temporarily giggled at, then promptly reported to its distributor. 
+ 
