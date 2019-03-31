@@ -30,3 +30,7 @@ source <blue-bandit root>/zenv
  <blud-bandit root>/scripts/flash.sh 
  ```
  
+ # Errate to be abused
+ * BLE: CVE-2018-7252
+   * Announced during Defcon 2018.
+ 
