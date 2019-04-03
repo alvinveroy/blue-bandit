@@ -48,6 +48,9 @@ source scripts/zenv.sh <path-to-zephyr-base>
       * Enabling experimental functionality on bluez
       * Using btattach, btmon, etc, with Zephyr config
       
+ * Bluetooth Stack Graphic
+      ![alt text](http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.s132.sds/dita/softdevices/s130/Images/bt_stack_arch_s132_s140.svg "Nordic Bluetooth Stack")
+      
  # Thread Breakdown
  #### USB UART (User)
    - [ ] Move to user thread
