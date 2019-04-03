@@ -56,16 +56,21 @@ source scripts/zenv.sh <path-to-zephyr-base>
  #### USB UART (User)
    - [ ] Move to user thread
    - [ ] Import xDC RealTime terminal application thread. May need to refactor some freeRTOS API to Zephyr
-   - [ ] Add terminal command discover bluetooth devices
+   - [ ] Add terminal command to discover bluetooth devices
+   - [ ] Add terminal command for spawning kernel space BT profile thread
+   - [ ] Decouple inputs to terminal so IO data streams (xin xout) can come from various HW such as BT, USB, etc.
  
  #### Bluetooth stack (kernel)
+   - [ ] Kernel thread capable for maintaining a BT profile
+   - [ ] User space interface, via terminal command, for spawning new BT profile thread 
  
  #### Battery (Kernel)
-   - [ ] Add kernel thread
+   - [ ] Add kernel thread to monitor battery level
    - [ ] Configure low power sleep mode
    - [ ] Add low-power preemptive shutdown protocols. Save/Close files, inform me that its running low (blink?)
      
  #### Terminal over Bluetooth (User)
+   - [ ] Spawns new thread that uses xDC Terminal application thread, but pipes different data stream IO (xin xout)
    - [ ] Telecommands to manually control bluetooth profile
    - [ ] ? File transfer protocol to pull logged data
  
