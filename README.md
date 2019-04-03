@@ -14,20 +14,27 @@ Very open to collaboration. Get a message to me via git and lets talk!
 # Building
 * Assuming build on Linux type system. Can probably use cygwin on Windows, but not verified.
 1. Setup Zephyr RTOS build environment. [See their documentation](https://docs.zephyrproject.org/latest/getting_started/getting_started.html)
-2. Setup Zephyr with blue-bandit config:
+
+2. Git clone blue-bandit
 ```
-source <blue-bandit root>/zenv
+https://github.com/DC11011100/blue-bandit.git
 ```
-3. Create cmake generators. In this case: Makefiles:
+
+3. Setup Zephyr with blue-bandit config:
+```
+cd blue-bandit
+source scripts/zenv.sh <path-to-zephyr-base>
+```
+4. Create cmake generators. In this case: Makefiles:
   
  ```
  mkdir build && cd build
- cmake <blue-bandit root>
+ cmake ..
  ```
  
- 4. Flash the controller
+ 5. Build the hex and flash controller
  ```
- <blud-bandit root>/scripts/flash.sh 
+ make && make flash 
  ```
  
  # Discovered Bluetooth Errata
