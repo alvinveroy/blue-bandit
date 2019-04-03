@@ -48,8 +48,21 @@ source scripts/zenv.sh <path-to-zephyr-base>
       * Enabling experimental functionality on bluez
       * Using btattach, btmon, etc, with Zephyr config
       
- # TODO
- - [ ] Refactor current usb uart into thread
- - [ ] Import xDC RealTime terminal application thread. May need to refactor some freeRTOS API to Zephyr
- - [ ] Add terminal command discover bluetooth devices
+ # Thread Breakdown
+ #### USB UART (User)
+   - [ ] Move to user thread
+   - [ ] Import xDC RealTime terminal application thread. May need to refactor some freeRTOS API to Zephyr
+   - [ ] Add terminal command discover bluetooth devices
+ 
+ #### Bluetooth stack (kernel)
+ 
+ #### Battery (Kernel)
+   - [ ] Add kernel thread
+   - [ ] Configure low power sleep mode
+   - [ ] Add low-power preemptive shutdown protocols. Save/Close files, inform me that its running low (blink?)
+     
+ #### Terminal over Bluetooth (User)
+   - [ ] Telecommands to manually control bluetooth profile
+   - [ ] ? File transfer protocol to pull logged data
+ 
  
