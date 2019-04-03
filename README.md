@@ -47,4 +47,9 @@ source scripts/zenv.sh <path-to-zephyr-base>
       * How configure laptop with BlueZ interface to Zephyr BLE
       * Enabling experimental functionality on bluez
       * Using btattach, btmon, etc, with Zephyr config
+      
+ # TODO
+ - [ ] Refactor current usb uart into thread
+ - [ ] Import xDC RealTime terminal application thread. May need to refactor some freeRTOS API to Zephyr
+ - [ ] Add terminal command discover bluetooth devices
  
