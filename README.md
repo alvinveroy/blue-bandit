@@ -50,7 +50,7 @@ source scripts/zenv.sh <path-to-zephyr-base>
       
  * Bluetooth Stack Graphic
  
- ![alt text](http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.s132.sds/dita/softdevices/s130/Images/bt_stack_arch_s132_s140.svg)
+ ![alt text](http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.s132.sds/dita/softdevices/s130/Images/bt_stack_arch_s132_s140.svg?sanitize=true)
       
  # Thread Breakdown
  #### USB UART (User)
