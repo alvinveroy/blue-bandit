@@ -30,3 +30,14 @@ source <blue-bandit root>/zenv
  <blud-bandit root>/scripts/flash.sh 
  ```
  
+ # Discovered Bluetooth Errata
+ * BLE: CVE-2018-7252
+   * Demonstrated by Damien Cauquil during Defcon 2018
+   
+ # Development Tips
+ This is mostly for me >:D
+ * [Zephyr + Bluez Configuration](https://docs.zephyrproject.org/1.13.0/subsystems/bluetooth/devel.html#bluetooth-bluez)
+      * How configure laptop with BlueZ interface to Zephyr BLE
+      * Enabling experimental functionality on bluez
+      * Using btattach, btmon, etc, with Zephyr config
+ 
