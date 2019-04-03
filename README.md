@@ -52,7 +52,7 @@ source scripts/zenv.sh <path-to-zephyr-base>
  
  ![Alt text](./nordic-bt-stack.svg)
       
- # Thread Breakdown
+ # TODO
  #### USB UART (User)
    - [ ] Move to user thread
    - [ ] Import xDC RealTime terminal application thread. May need to refactor some freeRTOS API to Zephyr
