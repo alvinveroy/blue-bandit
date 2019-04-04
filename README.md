@@ -17,7 +17,7 @@ Very open to collaboration. Get a message to me via git and lets talk!
 
 2. Git clone blue-bandit
 ```
-https://github.com/DC11011100/blue-bandit.git
+git clone https://github.com/DC11011100/blue-bandit.git
 ```
 
 3. Setup Zephyr with blue-bandit config:
@@ -32,7 +32,7 @@ source scripts/zenv.sh <path-to-zephyr-base>
  cmake ..
  ```
  
- 5. Build the hex and flash controller
+ 5. Build the hex then flash controller
  ```
  make && make flash 
  ```
