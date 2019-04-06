@@ -54,8 +54,8 @@ source scripts/zenv.sh <path-to-zephyr-base>
       
  # TODO
  #### USB UART (User)
+   - [X] Implement uart shell
    - [ ] Move to user thread
-   - [ ] Import xDC RealTime terminal application thread. May need to refactor some freeRTOS API to Zephyr
    - [ ] Add terminal command to discover bluetooth devices
    - [ ] Add terminal command for spawning kernel space BT profile thread
    - [ ] Decouple inputs to terminal so IO data streams (xin xout) can come from various HW such as BT, USB, etc.
