@@ -17,7 +17,7 @@ Very open to collaboration. Get a message to me via git and lets talk!
 
 2. Git clone blue-bandit
 ```
-https://github.com/DC11011100/blue-bandit.git
+git clone https://github.com/DC11011100/blue-bandit.git
 ```
 
 3. Setup Zephyr with blue-bandit config:
@@ -32,7 +32,7 @@ source scripts/zenv.sh <path-to-zephyr-base>
  cmake ..
  ```
  
- 5. Build the hex and flash controller
+ 5. Build the hex then flash controller
  ```
  make && make flash 
  ```
@@ -50,22 +50,27 @@ source scripts/zenv.sh <path-to-zephyr-base>
       
  * Bluetooth Stack Graphic
  
- ![alt text](http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.s132.sds/dita/softdevices/s130/Images/bt_stack_arch_s132_s140.svg?sanitize=true)
+ ![Alt text](./nordic-bt-stack.svg)
       
- # Thread Breakdown
+ # TODO
  #### USB UART (User)
    - [ ] Move to user thread
    - [ ] Import xDC RealTime terminal application thread. May need to refactor some freeRTOS API to Zephyr
-   - [ ] Add terminal command discover bluetooth devices
+   - [ ] Add terminal command to discover bluetooth devices
+   - [ ] Add terminal command for spawning kernel space BT profile thread
+   - [ ] Decouple inputs to terminal so IO data streams (xin xout) can come from various HW such as BT, USB, etc.
  
  #### Bluetooth stack (kernel)
+   - [ ] Kernel thread capable for maintaining a BT profile
+   - [ ] User space interface, via terminal command, for spawning new BT profile thread 
  
  #### Battery (Kernel)
-   - [ ] Add kernel thread
+   - [ ] Add kernel thread to monitor battery level
    - [ ] Configure low power sleep mode
    - [ ] Add low-power preemptive shutdown protocols. Save/Close files, inform me that its running low (blink?)
      
  #### Terminal over Bluetooth (User)
+   - [ ] Spawns new thread that uses xDC Terminal application thread, but pipes different data stream IO (xin xout)
    - [ ] Telecommands to manually control bluetooth profile
    - [ ] ? File transfer protocol to pull logged data
  
