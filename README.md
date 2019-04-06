@@ -40,9 +40,9 @@ source scripts/zenv.sh <path-to-zephyr-base>
 # Modules
 #### USB UART Terminal (User)
 ###### Entering shell
-'-c' turns on terminal coloring. Note you may need to point to a different /dev/tty device
+'-con' turns on terminal coloring. Note you may need to point to a different /dev/tty device
 ```
-minicom -D /dev/ttyACM0 -b 115200 -c
+minicom -D /dev/ttyACM0 -b 115200 -con
 ```
 ###### TODO
    - [X] Implement uart shell
