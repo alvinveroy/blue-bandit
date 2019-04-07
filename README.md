@@ -104,3 +104,15 @@ Kernel daemon which broadcasts low-battery/shutoff events and performs preemptiv
 
  
  * [Bluetooth Gatt Services](https://www.bluetooth.com/specifications/gatt/services)
+ 
+ * Setting up 'bluetooth' python module
+ Most of this should be relatively obvious system lib and python module dependency issues EXCEPT when trying to install gattlib python module, you may need to follow the following steps. In this case, I was using python 3.7:
+ ```
+pip3 download gattlib
+tar xvzf ./gattlib-0.20150805.tar.gz
+cd gattlib-0.20150805/
+sed -ie 's/boost_python-py34/boost_python3/' setup.py
+pip3 install .
+ ```
+
+This can highly vary based on your build system. What I did was search for 'libboost_python*' in my standard lib location.
