@@ -5,11 +5,19 @@
  */
 
 #include <zephyr.h>
+#include <zephyr/types.h>
+
 #include <misc/printk.h>
+
 #include <shell/shell.h>
 #include <version.h>
 #include <stdlib.h>
 
+
+extern "C"
+{
+    #include <kernel/ble-terminal/ble-terminal.h>
+}
 
 
 
@@ -119,7 +127,11 @@ SHELL_CMD_REGISTER(demo, &sub_demo, "Demo commands", NULL);
 SHELL_CMD_ARG_REGISTER(version, NULL, "Show kernel version", cmd_version, 1, 0);
 
 
+
+
+
+
 void main(void)
 {
-
+    BLETerminal();
 }
