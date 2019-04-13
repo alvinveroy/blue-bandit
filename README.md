@@ -25,7 +25,7 @@ west update
 3. Setup Zephyr with blue-bandit config:
 ```
 cd blue-bandit
-source scripts/zenv.sh # Update this script to point to your arm-embedded toolchain
+source scripts/zenv.sh
 ```
 4. Create cmake generators. In this case: Makefiles:
   
