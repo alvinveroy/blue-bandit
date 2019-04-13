@@ -14,10 +14,12 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 #include <misc/byteorder.h>
+#include <shell/shell.h>
 
 #include "bt-scan.h"
 
 static struct bt_conn *default_conn;
+
 
 static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
                          struct net_buf_simple *ad)
@@ -101,3 +103,17 @@ start_active_scan(void)
     if (err) printk("Scanning failed to start (err %d)\n", err);
     else     printk("Scanning successfully started\n");
 }
+
+
+static void
+bb_scan_list(void)
+{
+    printk("Test bbscan command");
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(subcmd_bb_scan,
+    SHELL_CMD(list, NULL, "List detected devices", bb_scan_list),
+    SHELL_SUBCMD_SET_END
+);
+
+SHELL_CMD_REGISTER(bb_scan, &subcmd_bb_scan, "BB Scan Commands", NULL);
