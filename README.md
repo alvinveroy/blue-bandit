@@ -48,10 +48,12 @@ minicom -D /dev/ttyACM0 -b 115200 -con
 ```
 ###### TODO
    - [X] Implement uart shell
-   - [ ] Move to user thread
-   - [ ] Add terminal command to discover bluetooth devices
+   - [X] Add terminal command to discover bluetooth devices
    - [ ] Add terminal command for spawning kernel space BT profile thread
    - [ ] Decouple inputs to terminal so IO data streams (xin xout) can come from various HW such as BT, USB, etc.
+   - [ ] Nice2Haves
+      - [ ] Move to user thread
+
 
 
 #### BLE UART Terminal (User)
@@ -69,8 +71,8 @@ creating if necessary. TBD
 #### Bluetooth Sniffer (Kernel)
 Daemon initiated via system call from user space terminal command.
 ###### TODO
-   - [ ] Terminal command
-   - [ ] Bluetooth sniffing capability
+   - [X] Terminal command
+   - [ ] Bluetooth packet sniffing capability
    - [ ] Bluetooth profile imposter
    - [ ] Log generator
    - [ ] Man in the middle ?
