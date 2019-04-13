@@ -13,10 +13,11 @@
 #include <version.h>
 #include <stdlib.h>
 
-
+//TODO: Add cpp wrappers to these
 extern "C"
 {
     #include <kernel/ble-terminal/ble-terminal.h>
+    #include <kernel/cmd/bt-scan.h>
 }
 
 
@@ -133,5 +134,9 @@ SHELL_CMD_ARG_REGISTER(version, NULL, "Show kernel version", cmd_version, 1, 0);
 
 void main(void)
 {
-    BLETerminal();
+    int err = bt_enable(NULL);
+    if (err) printk("Bluetooth init failed (err %d)\n", err);
+
+
+    start_active_scan();
 }

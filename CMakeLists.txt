@@ -10,8 +10,9 @@ project(blue-bandit)
 
 target_include_directories(app PRIVATE src)
 target_sources(app PRIVATE
+        src/kernel/cmd/bt-scan.c
         src/main.cpp
-        src/kernel/ble-terminal/ble-terminal.c
+        #src/kernel/ble-terminal/ble-terminal.c
         )
 
 
