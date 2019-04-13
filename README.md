@@ -18,12 +18,14 @@ Very open to collaboration. Get a message to me via git and lets talk!
 2. Git clone blue-bandit
 ```
 git clone https://github.com/DC11011100/blue-bandit.git
+west init -l zephyr
+west update
 ```
 
 3. Setup Zephyr with blue-bandit config:
 ```
 cd blue-bandit
-source scripts/zenv.sh <path-to-zephyr-base>
+source scripts/zenv.sh # Update this script to point to your arm-embedded toolchain
 ```
 4. Create cmake generators. In this case: Makefiles:
   
