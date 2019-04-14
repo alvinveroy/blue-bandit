@@ -33,7 +33,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
     //}
 
     bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-    printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
+    printk("Device found: %s (RSSI %d)\n", addr_str, rssi); //TODO: Should this ref a specific shell instance?
 
     /* connect only to devices in close proximity */
     if (rssi < -70) return;
@@ -106,13 +106,24 @@ start_active_scan(void)
 
 
 static void
-bb_scan_list(void)
+bb_scan_list(const struct shell *shell, size_t argc, char ** argv)
 {
-    printk("Test bbscan command");
+    s8_t scan_duration = argv[1]; // Specified in seconds
+
+    if (scan_duration <= 0 || scan_duration > 10)
+    {
+        shell_print(shell, "Duration range = [0,10](s). Defaulting to 5s");
+        scan_duration = 5;
+    }
+
+    start_active_scan();
+    k_sleep(1000 * scan_duration);
+    bt_le_scan_stop();
 }
 
+// TODO: bb_scan list is not using my passed in args
 SHELL_STATIC_SUBCMD_SET_CREATE(subcmd_bb_scan,
-    SHELL_CMD(list, NULL, "List detected devices", bb_scan_list),
+    SHELL_CMD_ARG(list, NULL, "Scan for n seconds. Max = 10s (ex. bb_scan list 3)", bb_scan_list, 0, 1),
     SHELL_SUBCMD_SET_END
 );
 

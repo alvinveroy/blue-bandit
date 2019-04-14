@@ -137,6 +137,4 @@ void main(void)
     int err = bt_enable(NULL);
     if (err) printk("Bluetooth init failed (err %d)\n", err);
 
-
-    start_active_scan();
 }
