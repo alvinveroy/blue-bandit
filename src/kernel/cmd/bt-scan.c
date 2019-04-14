@@ -105,7 +105,7 @@ start_active_scan(void)
 }
 
 
-static void
+static int
 bb_scan_list(const struct shell *shell, size_t argc, char ** argv)
 {
     s8_t scan_duration = argv[1]; // Specified in seconds
@@ -119,6 +119,8 @@ bb_scan_list(const struct shell *shell, size_t argc, char ** argv)
     start_active_scan();
     k_sleep(1000 * scan_duration);
     bt_le_scan_stop();
+
+    return 0;
 }
 
 // TODO: bb_scan list is not using my passed in args
