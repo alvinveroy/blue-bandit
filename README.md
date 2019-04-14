@@ -49,15 +49,6 @@ source scripts/zenv.sh
 ```
 minicom -D /dev/ttyACM0 -b 115200 -con
 ```
-###### TODO
-   - [X] Implement uart shell
-   - [X] Add terminal command to discover bluetooth devices
-   - [ ] Add terminal command for spawning kernel space BT profile thread
-   - [ ] Decouple inputs to terminal so IO data streams (xin xout) can come from various HW such as BT, USB, etc.
-   - [ ] Nice2Haves
-      - [ ] Move to user thread
-
-
 
 #### BLE UART Terminal (User)
 Secure connection enforced via predetermined key. You will need some special software for this...which I may end up
@@ -74,10 +65,14 @@ creating if necessary. TBD
 #### Bluetooth Sniffer (Kernel)
 Daemon initiated via system call from user space terminal command.
 ###### TODO
-   - [X] Terminal command
+   - [X] Terminal command --> bb_scan
+   - [X] Passive scan for discovering devices --> bb_scan list <scan duration(s)>
+   - [ ] Active scan for querying more details from detected devices
    - [ ] Bluetooth packet sniffing capability
    - [ ] Bluetooth profile imposter
-   - [ ] Log generator
+   - [ ] Logging
+      - [ ] Add flash mem write capability
+      - [ ] Link flash mem write with low power events
    - [ ] Man in the middle ?
         - [ ] See Damien Cauquil presentation in Defcon 2018
    
@@ -87,10 +82,14 @@ Kernel daemon which broadcasts low-battery/shutoff events and performs preemptiv
 
 ###### TODO
    - [ ] Add kernel thread to monitor battery level
-   - [ ] Configure low power sleep mode
-   - [ ] Add low-power preemptive shutdown protocols. Save/Close files, inform me that its running low (blink?)
+   - [ ] Add low power broadcasted events
+   - [ ] Ability to signal other threads with lower events 
  
- 
+#### Hardware
+###### TODO
+   - [ ] Measure power usage for typical operations
+      - [ ] nrf52840 
+      - [ ] esp32 (x12 arriving in May >:D )
  
 # Misc 
 ##### Discovered Bluetooth Errata
