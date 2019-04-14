@@ -15,9 +15,12 @@ Very open to collaboration. Get a message to me via git and lets talk!
 * Assuming build on Linux type system. Can probably use cygwin on Windows, but not verified.
 1. Setup Zephyr RTOS build environment. [See their documentation](https://docs.zephyrproject.org/latest/getting_started/getting_started.html)
 
-2. Git clone blue-bandit
+2. Git clone blue-bandit and setup with modifed zephyr
 ```
 git clone https://github.com/DC11011100/blue-bandit.git
+cd blue-bandit
+git clone https://github.com/DC11011100/zephyr.git
+cd ..
 west init -l zephyr
 west update
 ```
