@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <zephyr.h>
 #include <misc/printk.h>
+#include <stdlib.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
@@ -33,7 +34,9 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
     //}
 
     bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-    printk("Device found: %s (RSSI %d)\n", addr_str, rssi); //TODO: Should this ref a specific shell instance?
+    //TODO: Should the printing ref a specific shell instance?
+    printk("Ad: %d LE@%s (RSSI %d)  ---- Rx %d B\n",
+            type, addr_str, rssi, ad->len);
 
     /* connect only to devices in close proximity */
     if (rssi < -70) return;
@@ -99,7 +102,15 @@ start_active_scan(void)
 {
     bt_conn_cb_register(&conn_callbacks);
 
-    int err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found);
+    struct bt_le_scan_param scantype = {
+        .type = BT_HCI_LE_SCAN_ACTIVE,
+        .filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_ENABLE,
+        .interval = BT_GAP_SCAN_FAST_INTERVAL,
+        .window = BT_GAP_SCAN_FAST_WINDOW
+
+    };
+
+    int err = bt_le_scan_start(&scantype, device_found);
     if (err) printk("Scanning failed to start (err %d)\n", err);
     else     printk("Scanning successfully started\n");
 }
@@ -108,16 +119,17 @@ start_active_scan(void)
 static int
 bb_scan_list(const struct shell *shell, size_t argc, char ** argv)
 {
-    s8_t scan_duration = argv[1]; // Specified in seconds
+    s8_t scan_duration = strtol(argv[1], 0, 10);
 
     if (scan_duration <= 0 || scan_duration > 10)
     {
-        shell_print(shell, "Duration range = [0,10](s). Defaulting to 5s");
-        scan_duration = 5;
+        s32_t default_window = 10;
+        shell_print(shell, "Duration Interval: [0,10]. Defaulting to %ds", default_window);
+        scan_duration = default_window;
     }
 
     start_active_scan();
-    k_sleep(1000 * scan_duration);
+    k_sleep(625 * scan_duration);
     bt_le_scan_stop();
 
     return 0;
@@ -125,7 +137,7 @@ bb_scan_list(const struct shell *shell, size_t argc, char ** argv)
 
 // TODO: bb_scan list is not using my passed in args
 SHELL_STATIC_SUBCMD_SET_CREATE(subcmd_bb_scan,
-    SHELL_CMD_ARG(list, NULL, "Scan for n seconds. Max = 10s (ex. bb_scan list 3)", bb_scan_list, 0, 1),
+    SHELL_CMD_ARG(list, NULL, "Scan for n seconds. Max = 10s (ex. bb_scan list 3)", bb_scan_list, 1, 1),
     SHELL_SUBCMD_SET_END
 );
 
