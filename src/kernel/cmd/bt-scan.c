@@ -21,11 +21,31 @@
 
 static struct bt_conn *default_conn;
 
+void
+get_advertised_fullname(struct net_buf_simple * ad, char * name)
+{
+    if (ad->len < 2) return;
+
+    for (s32_t i=0; i<ad->len; i++)
+    {
+        // Parse component advertisement structures
+        u8_t sublen  = ad->data[i];
+        u8_t subtype = ad->data[i+1];
+        if (subtype == BT_DATA_NAME_COMPLETE)
+        {
+            for (s32_t j=0; j < sublen; j++) name[j] = ad->data[j];
+            name[sublen] = '\0';
+            i += sublen;
+        }
+    }
+}
 
 static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
                          struct net_buf_simple *ad)
 {
     char addr_str[BT_ADDR_LE_STR_LEN];
+    char name[32 + 1] = "n/a";
+
     if (default_conn) return;
 
     /* We're only interested in connectable events */
@@ -34,16 +54,13 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
     //}
 
     bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+    get_advertised_fullname(ad, name);
     //TODO: Should the printing ref a specific shell instance?
-    printk("Ad: %d LE@%s (RSSI %d)  ---- Rx %d B\n",
-            type, addr_str, rssi, ad->len);
+    printk("LE-Ad: %d %s@%s (RSSI %d)  ---- Rx %d B\n", type, name, addr_str, rssi, ad->len);
 
     /* connect only to devices in close proximity */
-    if (rssi < -70) return;
+    //if (rssi < -70) return;
 
-
-    //if (bt_le_scan_stop()) return;
-    //default_conn = bt_conn_create_le(addr, BT_LE_CONN_PARAM_DEFAULT);
 }
 
 static void connected(struct bt_conn *conn, u8_t err)
