@@ -21,6 +21,10 @@
 
 static struct bt_conn *default_conn;
 
+
+// Advertisement packet info See
+//  BLE:     BT 4 Core Spec v6 Vol.2 Part B Section 2 --> Air Interface Packets
+//  Classic: BT 4 Core Spec
 void
 get_advertised_fullname(struct net_buf_simple * ad, char * name)
 {
@@ -29,13 +33,14 @@ get_advertised_fullname(struct net_buf_simple * ad, char * name)
     for (s32_t i=0; i<ad->len; i++)
     {
         // Parse component advertisement structures
-        u8_t sublen  = ad->data[i];
-        u8_t subtype = ad->data[i+1];
-        if (subtype == BT_DATA_NAME_COMPLETE)
+        u8_t sublen   = ad->data[i] - 1; // Length also includes type hence the -1
+        u8_t subtype  = ad->data[i+1];
+        u8_t substart = i+2;
+        if (subtype == BT_DATA_NAME_COMPLETE || subtype == BT_DATA_NAME_SHORTENED)
         {
-            for (s32_t j=0; j < sublen; j++) name[j] = ad->data[j];
+            for (s32_t j=0; j<sublen; j++) name[j] = ad->data[substart + j];
             name[sublen] = '\0';
-            i += sublen;
+            i = substart + sublen;
         }
     }
 }
