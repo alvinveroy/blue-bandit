@@ -22,10 +22,12 @@
 static struct bt_conn *default_conn;
 
 
+#define TAB_WIDTH 4
+
 // Advertisement packet info See
 //  BLE:     BT 4 Core Spec v6 Vol.2 Part B Section 2 --> Air Interface Packets
 //  Classic: BT 4 Core Spec
-void
+static void
 get_advertised_fullname(struct net_buf_simple * ad, char * name)
 {
     if (ad->len < 2) return;
@@ -45,7 +47,28 @@ get_advertised_fullname(struct net_buf_simple * ad, char * name)
     }
 }
 
-static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
+static const char *
+strAdType(u8_t ad_type)
+{
+    switch(ad_type)
+    {
+        case BT_LE_ADV_IND:                 return "LE Undirected Connectable";
+        case BT_LE_ADV_DIRECT_IND:          return "LE Directed Connectable";
+        case BT_LE_ADV_SCAN_IND:            return "LE Scannable Non-connectable";
+        case BT_LE_ADV_NONCONN_IND:         return "LE Non-connectable";
+        case BT_LE_ADV_DIRECT_IND_LOW_DUTY: return "LE Low-duty Directed Connectable";
+        default:                    return "LE Unspecified";
+    }
+}
+
+static void
+printAdServices(struct net_buf_simple *ad, u8_t indent)
+{
+    printk("        todo\n");
+}
+
+static void
+device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
                          struct net_buf_simple *ad)
 {
     char addr_str[BT_ADDR_LE_STR_LEN];
@@ -53,22 +76,25 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 
     if (default_conn) return;
 
-    /* We're only interested in connectable events */
-    //if (type != BT_LE_ADV_IND && type != BT_LE_ADV_DIRECT_IND) {
-    //    return;
-    //}
-
     bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
     get_advertised_fullname(ad, name);
+
     //TODO: Should the printing ref a specific shell instance?
-    printk("LE-Ad: %d %s@%s (RSSI %d)  ---- Rx %d B\n", type, name, addr_str, rssi, ad->len);
+    printk("%s@%s (RSSI %d)  ---- Rx %d B\n"
+           "    Advertising: %s (%d)\n"
+           "    Services   :\n",
+           name, addr_str, rssi, ad->len,
+           strAdType(type), type);
+    printAdServices(ad, 2);
+    printk("\n");
 
     /* connect only to devices in close proximity */
     //if (rssi < -70) return;
 
 }
 
-static void connected(struct bt_conn *conn, u8_t err)
+static void
+connected(struct bt_conn *conn, u8_t err)
 {
     char addr[BT_ADDR_LE_STR_LEN];
 
@@ -134,7 +160,6 @@ start_active_scan(void)
 
     int err = bt_le_scan_start(&scantype, device_found);
     if (err) printk("Scanning failed to start (err %d)\n", err);
-    else     printk("Scanning successfully started\n");
 }
 
 
