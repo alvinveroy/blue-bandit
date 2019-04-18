@@ -32,7 +32,7 @@ get_advertised_fullname(struct net_buf_simple * ad, char * name)
 {
     if (ad->len < 2) return;
 
-    for (s32_t i=0; i<ad->len; i++)
+    for (s32_t i=0; i<ad->len;)
     {
         // Parse component advertisement structures
         u8_t sublen   = ad->data[i] - 1; // Length also includes type hence the -1
@@ -43,7 +43,7 @@ get_advertised_fullname(struct net_buf_simple * ad, char * name)
             for (s32_t j=0; j<sublen; j++) name[j] = ad->data[substart + j];
             name[sublen] = '\0';
             i = substart + sublen;
-        }
+        } else i++;
     }
 }
 
@@ -57,14 +57,55 @@ strAdType(u8_t ad_type)
         case BT_LE_ADV_SCAN_IND:            return "LE Scannable Non-connectable";
         case BT_LE_ADV_NONCONN_IND:         return "LE Non-connectable";
         case BT_LE_ADV_DIRECT_IND_LOW_DUTY: return "LE Low-duty Directed Connectable";
-        default:                    return "LE Unspecified";
+        default:                            return "LE Unspecified";
+    }
+}
+
+// See GAP EIR/AD/OOB data type numbers
+// https://www.bluetooth.com/specifications/assigned-numbers/generic-access-profile
+static char *
+strDataType(u8_t gap_data_type)
+{
+    switch(gap_data_type)
+    {
+        case BT_DATA_FLAGS:             return "Flags";
+        case BT_DATA_UUID16_SOME:       return "Partial 2B Service UUID List";
+        case BT_DATA_UUID16_ALL:        return "2B Service UUID List";
+        case BT_DATA_UUID32_SOME:       return "Partial 4B Service UUID List";
+        case BT_DATA_UUID32_ALL:        return "4B Service UUID List";
+        case BT_DATA_UUID128_SOME:      return "Partial 16B Service UUID List";
+        case BT_DATA_UUID128_ALL:       return "16B Service UUID List";
+        case BT_DATA_NAME_SHORTENED:    return "Shortened Local Name";
+        case BT_DATA_NAME_COMPLETE:     return "Complete Local Name";
+        case BT_DATA_TX_POWER:          return "TX Power";
+        case BT_DATA_SOLICIT16:         return "Solicit 2B UUID List";
+        case BT_DATA_SOLICIT128:        return "Solicit 16b UUID List";
+        case BT_DATA_SVC_DATA16:        return "2B Service Data";
+        case BT_DATA_GAP_APPEARANCE:    return "GAP Appearance";
+        case BT_DATA_SOLICIT32:         return "4B Solicit UUID List";
+        case BT_DATA_SVC_DATA32:        return "4B Service Data";
+        case BT_DATA_SVC_DATA128:       return "16B Service Data";
+        case BT_DATA_MANUFACTURER_DATA: return "Manufacturer Data";
+        default:                        return "Unspecifed GAP Data Type";
     }
 }
 
 static void
-printAdServices(struct net_buf_simple *ad, u8_t indent)
+printAdSubTypes(struct net_buf_simple * ad)
 {
-    printk("        todo\n");
+    printk("    Ad Data:\n");
+
+    if (!ad || ad->len < 3) return;
+
+    for (s32_t i=0; i<ad->len;)
+    {
+        u8_t sublen  = ad->data[i] - 1; // Don't can't type byte
+        u8_t subtype = ad->data[i+1];
+        u8_t start   = i+2;
+
+        printk("        %s (0x%x)\n", strDataType(subtype), subtype);
+        i += start + sublen;
+    }
 }
 
 static void
@@ -81,11 +122,10 @@ device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 
     //TODO: Should the printing ref a specific shell instance?
     printk("%s@%s (RSSI %d)  ---- Rx %d B\n"
-           "    Advertising: %s (%d)\n"
-           "    Services   :\n",
+           "    Advertising: %s (%d)\n",
            name, addr_str, rssi, ad->len,
            strAdType(type), type);
-    printAdServices(ad, 2);
+    printAdSubTypes(ad);
     printk("\n");
 
     /* connect only to devices in close proximity */
@@ -114,7 +154,8 @@ connected(struct bt_conn *conn, u8_t err)
     bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 }
 
-static void disconnected(struct bt_conn *conn, u8_t reason)
+static void
+disconnected(struct bt_conn *conn, u8_t reason)
 {
     char addr[BT_ADDR_LE_STR_LEN];
     int err;
@@ -142,32 +183,15 @@ static struct bt_conn_cb conn_callbacks = {
         .disconnected = disconnected,
 };
 
-//Desc: Register connection callbacks and start an 'active' scan. In BT world, this means that the scanning host
+//Desc: Register connection callbacks and start an scan. In BT world, this means that the scanning host
 //      can message picked up devices to request for more information, whereas passive scan can only receive
 //      advertised data.
-void
-start_active_scan(void)
-{
-    bt_conn_cb_register(&conn_callbacks);
-
-    struct bt_le_scan_param scantype = {
-        .type = BT_HCI_LE_SCAN_ACTIVE,
-        .filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_ENABLE,
-        .interval = BT_GAP_SCAN_FAST_INTERVAL,
-        .window = BT_GAP_SCAN_FAST_WINDOW
-
-    };
-
-    int err = bt_le_scan_start(&scantype, device_found);
-    if (err) printk("Scanning failed to start (err %d)\n", err);
-}
-
 
 static int
-bb_scan_list(const struct shell *shell, size_t argc, char ** argv)
+cmd_scan(const struct shell *shell, size_t argc, char ** argv, u8_t scan_type)
 {
+    // Parse command inputs, setting default values if necessary
     s8_t scan_duration = strtol(argv[1], 0, 10);
-
     if (scan_duration <= 0 || scan_duration > 10)
     {
         s32_t default_window = 10;
@@ -175,16 +199,39 @@ bb_scan_list(const struct shell *shell, size_t argc, char ** argv)
         scan_duration = default_window;
     }
 
-    start_active_scan();
-    k_sleep(625 * scan_duration);
-    bt_le_scan_stop();
+    // Register callback, start then stop command after some time
+    bt_conn_cb_register(&conn_callbacks);
 
-    return 0;
+    struct bt_le_scan_param scanparam = {
+            .type = scan_type,
+            .filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_ENABLE,
+            .interval = BT_GAP_SCAN_FAST_INTERVAL,
+            .window = BT_GAP_SCAN_FAST_WINDOW
+    };
+
+    s32_t err = bt_le_scan_start(&scanparam, device_found);
+    if(err) printk("Scanning failed to start (err %d)\n", err);
+    k_sleep(1000 * scan_duration);
+    bt_le_scan_stop();
+    return err;
+}
+
+static int
+cmd_scan_passive(const struct shell * shell, size_t argc, char ** argv)
+{
+    return cmd_scan(shell, argc, argv, BT_HCI_LE_SCAN_PASSIVE);
+}
+
+static int
+cmd_scan_active(const struct shell * shell, size_t argc, char ** argv)
+{
+    return cmd_scan(shell, argc, argv, BT_HCI_LE_SCAN_ACTIVE);
 }
 
 // TODO: bb_scan list is not using my passed in args
 SHELL_STATIC_SUBCMD_SET_CREATE(subcmd_bb_scan,
-    SHELL_CMD_ARG(list, NULL, "Scan for n seconds. Max = 10s (ex. bb_scan list 3)", bb_scan_list, 1, 1),
+    SHELL_CMD_ARG(passive, NULL, "Scan for n seconds. Max = 10s (ex. bb_scan passive 3)", cmd_scan_passive, 1, 1),
+    SHELL_CMD_ARG(active, NULL, "Scan for n seconds. Max = 10s (ex. bb_scan active 3)", cmd_scan_active, 1, 1),
     SHELL_SUBCMD_SET_END
 );
 
