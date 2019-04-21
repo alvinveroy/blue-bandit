@@ -28,7 +28,7 @@ static struct bt_conn *default_conn;
 //  BLE:     BT 4 Core Spec v6 Vol.2 Part B Section 2 --> Air Interface Packets
 //  Classic: BT 4 Core Spec
 static void
-get_advertised_fullname(struct net_buf_simple * ad, char * name)
+get_advertised_fullname(struct net_buf_simple * ad, char * name, u8_t max_len)
 {
     if (ad->len < 2) return;
 
@@ -40,8 +40,9 @@ get_advertised_fullname(struct net_buf_simple * ad, char * name)
         u8_t substart = i+2;
         if (subtype == BT_DATA_NAME_COMPLETE || subtype == BT_DATA_NAME_SHORTENED)
         {
-            for (s32_t j=0; j<sublen; j++) name[j] = ad->data[substart + j];
-            name[sublen] = '\0';
+            for (s32_t j=0; j<sublen && j < max_len; j++) name[j] = ad->data[substart + j];
+            name[sublen]  = '\0';
+            name[max_len] = '\0'; // juuuuuust in case
             i = substart + sublen;
         } else i++;
     }
@@ -50,6 +51,7 @@ get_advertised_fullname(struct net_buf_simple * ad, char * name)
 static const char *
 strAdType(u8_t ad_type)
 {
+#ifdef BB_VERBOSE
     switch(ad_type)
     {
         case BT_LE_ADV_IND:                 return "LE Undirected Connectable";
@@ -59,6 +61,10 @@ strAdType(u8_t ad_type)
         case BT_LE_ADV_DIRECT_IND_LOW_DUTY: return "LE Low-duty Directed Connectable";
         default:                            return "LE Unspecified";
     }
+#else
+    return "";
+#endif
+
 }
 
 // See GAP EIR/AD/OOB data type numbers
@@ -66,6 +72,7 @@ strAdType(u8_t ad_type)
 static char *
 strDataType(u8_t gap_data_type)
 {
+#ifdef BB_VERBOSE
     switch(gap_data_type)
     {
         case BT_DATA_FLAGS:             return "Flags";
@@ -88,6 +95,10 @@ strDataType(u8_t gap_data_type)
         case BT_DATA_MANUFACTURER_DATA: return "Manufacturer Data";
         default:                        return "Unspecifed GAP Data Type";
     }
+#else
+    return "";
+#endif
+
 }
 
 static void
@@ -103,22 +114,29 @@ printAdSubTypes(struct net_buf_simple * ad)
         u8_t subtype = ad->data[i+1];
         u8_t start   = i+2;
 
-        printk("        %s (0x%x)\n", strDataType(subtype), subtype);
-        i += start + sublen;
+        // Annotate Data Type and dump its data
+        printk("        %s (0x%x) :", strDataType(subtype), subtype);
+        for (s32_t j=0; j<sublen; j++) printk(" %02x", ad->data[start + j]);
+        printk("\n");
+
+        // Move onto next subdata chunk
+        i = (start + sublen);
     }
 }
 
+#define MAX_LEN_NAME 64
 static void
 device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
                          struct net_buf_simple *ad)
 {
     char addr_str[BT_ADDR_LE_STR_LEN];
-    char name[32 + 1] = "n/a";
+    char name[MAX_LEN_NAME + 1] = {0};
+    strcpy(name, "n/a");
 
     if (default_conn) return;
 
     bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-    get_advertised_fullname(ad, name);
+    get_advertised_fullname(ad, name, MAX_LEN_NAME);
 
     //TODO: Should the printing ref a specific shell instance?
     printk("%s@%s (RSSI %d)  ---- Rx %d B\n"
