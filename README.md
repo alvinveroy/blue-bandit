@@ -58,8 +58,8 @@ Secure connection enforced via predetermined key. You will need some special sof
 creating if necessary. TBD
  
 ###### TODO
-   - [ ] BLE Gatt service
-        - [ ] Create gatt server with RX/TX characteristics
+   - [ ] BLE L2CAP Channel (rfcomm emulator)
+        - [ ] Assign l2cap channel and advertisement
         - [ ] Desktop python script for terminal interface
         - [ ] Enable Bluetooth Security Management Protocol
    - [ ] Enforce password login after pairing
