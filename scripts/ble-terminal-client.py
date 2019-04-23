@@ -19,6 +19,8 @@ DBUS_PROP_IFACE =    'org.freedesktop.DBus.Properties'
 GATT_SERVICE_IFACE = 'org.bluez.GattService1'
 GATT_CHRC_IFACE =    'org.bluez.GattCharacteristic1'
 
+BB_UART_UUID =       '0000dc00-0000-1000-8000-00805f9b34fb'
+BB_BATTERY_UUID =    '0000180f-0000-1000-8000-00805f9b34fb'
 HR_SVC_UUID =        '0000180d-0000-1000-8000-00805f9b34fb'
 HR_MSRMT_UUID =      '00002a37-0000-1000-8000-00805f9b34fb'
 BODY_SNSR_LOC_UUID = '00002a38-0000-1000-8000-00805f9b34fb'
@@ -29,6 +31,11 @@ hr_service = None
 hr_msrmt_chrc = None
 body_snsr_loc_chrc = None
 hr_ctrl_pt_chrc = None
+
+
+battery_service = None
+
+uart_service = None
 
 
 def generic_error_cb(error):
@@ -172,6 +179,46 @@ def process_hr_service(service_path, chrc_paths):
 
     return True
 
+def process_uart_service(service_path, chrc_paths):
+    service = bus.get_object(BLUEZ_SERVICE_NAME, service_path)
+    service_props = service.GetAll(GATT_SERVICE_IFACE, dbus_interface=DBUS_PROP_IFACE)
+
+    uuid = service_props['UUID']
+
+    if uuid != BB_UART_UUID:
+        return False
+
+    print('Blue-Bandit Service found: ' + service_path)
+
+    # Process the characteristics.
+    for chrc_path in chrc_paths:
+        process_chrc(chrc_path)
+
+    global hr_service
+    hr_service = (service, service_props, service_path)
+
+    return True
+
+
+def process_battery_service(service_path, chrc_paths):
+    service = bus.get_object(BLUEZ_SERVICE_NAME, service_path)
+    service_props = service.GetAll(GATT_SERVICE_IFACE, dbus_interface=DBUS_PROP_IFACE)
+
+    uuid = service_props['UUID']
+
+    if uuid != BB_BATTERY_UUID:
+        return False
+
+    print('Blue-Bandit Service found: ' + service_path)
+
+    # Process the characteristics.
+    for chrc_path in chrc_paths:
+        process_chrc(chrc_path)
+
+    global battery_service
+    battery_service = (service, service_props, service_path)
+
+    return True
 
 def interfaces_removed_cb(object_path, interfaces):
     if not hr_service:
@@ -205,23 +252,38 @@ def main():
 
     # List sevices found
     for path, interfaces in objects.items():
+        # Skip anything that doesn't offer GATT services
         if GATT_SERVICE_IFACE not in interfaces.keys():
             continue
         
-        print(interfaces)
+
+        print('service path: %s' % str(path))
+        #print(interfaces)
         chrc_paths = [d for d in chrcs if d.startswith(path + "/")]
 
+        done = False
         if process_hr_service(path, chrc_paths):
+            print('Heartrate processed')
+            done = False
+
+        if process_uart_service(path, chrc_paths):
+            print('uart processed')
+            done = True
+
+        if process_battery_service(path, chrc_paths):
+            print('battery processed')
+            done = True
+
+        if done:
             break
 
-    if not hr_service:
-        print('No Heart Rate Service found')
+    if not hr_service and not uart_service:
+        print('No service found from {heart rate, xdc_uart, battery}')
         sys.exit(1)
 
     start_client()
 
     mainloop.run()
-
 
 if __name__ == '__main__':
     main()

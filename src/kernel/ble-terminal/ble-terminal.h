@@ -8,6 +8,9 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 
+// For good content on GATT. See BT Core Spec v5.1 Vol.3 Part G
+// Sections 1-3
+
 
 int BLETerminal();
 

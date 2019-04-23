@@ -134,7 +134,12 @@ SHELL_CMD_ARG_REGISTER(version, NULL, "Show kernel version", cmd_version, 1, 0);
 
 void main(void)
 {
+    // Note: Per documentations bt_set_id_addr should be called before bt_enable. If you want to dynamically change
+    //       it, then either fix that code yourself, or call bt_disable, change, then reenable ;)
+    static bt_addr_le_t local_le_address = {0, {0x00, 0xca, 0xfa, 0xd0, 0x0d }};
+    bt_set_id_addr(&local_le_address);
+
     int err = bt_enable(NULL);
     if (err) printk("Bluetooth init failed (err %d)\n", err);
-
+    BLETerminal();
 }
