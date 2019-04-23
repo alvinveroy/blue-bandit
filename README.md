@@ -55,41 +55,51 @@ Secure connection enforced via predetermined key. You will need some special sof
 creating if necessary. TBD
  
 ###### TODO
-   - [ ] Enable secure connection peripheral ble service
-   - [ ] Reuse shell from USB UART Shell
-        - [ ] Intercept trasport layer and replace USB UART --> BLE UART
-   - [ ] Nice 2 Have: Setup Object Transfer Service for gatt. Meant to offload big data that may otherwise inhibit the
-         bluetooth shell
-        - [ ] Setup parallel bluetooth service thread with object pointer
-
+   - [ ] BLE Gatt service
+        - [ ] Create gatt server with RX/TX characteristics
+        - [ ] Desktop python script for terminal interface
+        - [ ] Enable Bluetooth Security Management Protocol
+   - [ ] Enforce password login after pairing
+   - [ ] Bump security method of pairing with Out-of-Band (OOB)   
+   - [ ] Setup wireless file transfers with OBEX service
+   
 #### Bluetooth Sniffer (Kernel)
-Daemon initiated via system call from user space terminal command.
+Daemon initiated via system call from user space terminal command
+
 ###### TODO
    - [X] Terminal command --> bb_scan
-   - [X] Passive scan for discovering devices --> bb_scan list <scan duration(s)>
-   - [ ] Active scan for querying more details from detected devices
+   - [X] Passive scan for discovering devices --> bb_scan passive
+   - [X] Active scan for querying more details from detected devices --> bb_scan active
+   - [ ] Logging
+      - [X] Add flash mem write capability
+      - [X] Save bluetooth settings (pair keys, name, id)
+      - [ ] Link flash mem write with low power events
    - [ ] Bluetooth packet sniffing capability
    - [ ] Bluetooth profile imposter
-   - [ ] Logging
-      - [ ] Add flash mem write capability
-      - [ ] Link flash mem write with low power events
    - [ ] Man in the middle ?
         - [ ] See Damien Cauquil presentation in Defcon 2018
    
 #### Battery (Kernel)
 Kernel daemon which broadcasts low-battery/shutoff events and performs preemptive safety functions upon these events.
 
-
 ###### TODO
-   - [ ] Add kernel thread to monitor battery level
-   - [ ] Add low power broadcasted events
-   - [ ] Ability to signal other threads with lower events 
+   - [ ] BLE Service
+        - [X] Create desktop python script for picking up battery levels
+        - [X] Gatt service to dispatch 
+        - [ ] Hook up actually battery voltage to ble service
+   - [ ] Kernel thread: battery monitor
+       - [ ] Add low power broadcasted events
+            - [ ] To BLE battery gatt server
+            - [ ] To local threads implementing low-power reactions
  
 #### Hardware
 ###### TODO
    - [ ] Measure power usage for typical operations
       - [ ] nrf52840 
-      - [ ] esp32 (x12 arriving in May >:D )
+      - [ ] esp32
+   - [ ] Get a suitable battery
+      - [ ] nrf52840
+      - [ ] esp32
  
 # Misc 
 ##### Discovered Bluetooth Errata
