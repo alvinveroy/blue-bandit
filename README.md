@@ -50,6 +50,9 @@ source scripts/zenv.sh
 minicom -D /dev/ttyACM0 -b 115200 -con
 ```
 
+###### TODO
+Done!
+
 #### BLE UART Terminal (User)
 Secure connection enforced via predetermined key. You will need some special software for this...which I may end up
 creating if necessary. TBD
