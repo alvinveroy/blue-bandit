@@ -19,8 +19,7 @@ DBUS_PROP_IFACE =    'org.freedesktop.DBus.Properties'
 GATT_SERVICE_IFACE = 'org.bluez.GattService1'
 GATT_CHRC_IFACE =    'org.bluez.GattCharacteristic1'
 
-BB_UART_UUID =       '0000dc00-0000-1000-8000-00805f9b34fb'
-BB_BATTERY_UUID =    '0000180f-0000-1000-8000-00805f9b34fb'
+
 HR_SVC_UUID =        '0000180d-0000-1000-8000-00805f9b34fb'
 HR_MSRMT_UUID =      '00002a37-0000-1000-8000-00805f9b34fb'
 BODY_SNSR_LOC_UUID = '00002a38-0000-1000-8000-00805f9b34fb'
@@ -33,9 +32,16 @@ body_snsr_loc_chrc = None
 hr_ctrl_pt_chrc = None
 
 
-battery_service = None
 
+BB_UART_UUID = '0000dc00-0000-1000-8000-00805f9b34fb'
 uart_service = None
+
+
+SERVICE_BATTERY_UUID     = '0000180f-0000-1000-8000-00805f9b34fb'
+CHARCTR_BATTERY_LVL_UUID = '00002a19-0000-1000-8000-00805f9b34fb'
+chrc_battery_lvl = None
+battery_service  = None
+
 
 
 def generic_error_cb(error):
@@ -118,7 +124,27 @@ def hr_msrmt_changed_cb(iface, changed_props, invalidated_props):
         print('\tEnergy Expended: ' + str(int(value[next_ind])))
 
 
+
+def response_battery_level():
+    print("Battery level notifications enabled")
+
+
+def propertyChange_battery_level(iface, changed_props, invalidated_props):
+    if iface != GATT_CHRC_IFACE:
+        return
+
+    if not len(changed_props):
+        return
+
+    value = changed_props.get('Value', None)
+    if not value:
+        return
+
+    print('Battery @ %d%%' % value[0])
+
+
 def start_client():
+    '''
     # Read the Body Sensor Location value and print it asynchronously.
     body_snsr_loc_chrc[0].ReadValue({}, reply_handler=body_sensor_val_cb,
                                     error_handler=generic_error_cb,
@@ -134,9 +160,16 @@ def start_client():
     hr_msrmt_chrc[0].StartNotify(reply_handler=hr_msrmt_start_notify_cb,
                                  error_handler=generic_error_cb,
                                  dbus_interface=GATT_CHRC_IFACE)
+    '''
+    # Subscribe to battery notificatios
+    if battery_service:
+        propertyIF_battery_level = dbus.Interface(chrc_battery_lvl[0], DBUS_PROP_IFACE)
+        propertyIF_battery_level.connect_to_signal("PropertiesChanged", propertyChange_battery_level)
+        chrc_battery_lvl[0].StartNotify(reply_handler=response_battery_level,
+                                        error_handler=generic_error_cb,
+                                        dbus_interface=GATT_CHRC_IFACE)
 
-
-def process_chrc(chrc_path):
+def process_heartrate_chrc(chrc_path):
     chrc = bus.get_object(BLUEZ_SERVICE_NAME, chrc_path)
     chrc_props = chrc.GetAll(GATT_CHRC_IFACE,
                              dbus_interface=DBUS_PROP_IFACE)
@@ -157,6 +190,40 @@ def process_chrc(chrc_path):
 
     return True
 
+def process_uart_chrc(chrc_path):
+    chrc = bus.get_object(BLUEZ_SERVICE_NAME, chrc_path)
+    chrc_props = chrc.GetAll(GATT_CHRC_IFACE,
+                             dbus_interface=DBUS_PROP_IFACE)
+
+    uuid = chrc_props['UUID']
+
+    if uuid == HR_MSRMT_UUID:
+        global hr_msrmt_chrc
+        hr_msrmt_chrc = (chrc, chrc_props)
+    elif uuid == BODY_SNSR_LOC_UUID:
+        global body_snsr_loc_chrc
+        body_snsr_loc_chrc = (chrc, chrc_props)
+    elif uuid == HR_CTRL_PT_UUID:
+        global hr_ctrl_pt_chrc
+        hr_ctrl_pt_chrc = (chrc, chrc_props)
+    else:
+        print('Unrecognized characteristic: ' + uuid)
+
+    return True
+
+def process_battery_chrc(chrc_path):
+    chrc = bus.get_object(BLUEZ_SERVICE_NAME, chrc_path)
+    chrc_props = chrc.GetAll(GATT_CHRC_IFACE, dbus_interface=DBUS_PROP_IFACE)
+
+    uuid = chrc_props['UUID']
+
+    if uuid == CHARCTR_BATTERY_LVL_UUID:
+        global chrc_battery_lvl
+        chrc_battery_lvl = (chrc, chrc_props)
+    else:
+        print('Unrecognized battery characteristic: ' + uuid)
+
+    return True
 
 def process_hr_service(service_path, chrc_paths):
     service = bus.get_object(BLUEZ_SERVICE_NAME, service_path)
@@ -172,7 +239,7 @@ def process_hr_service(service_path, chrc_paths):
 
     # Process the characteristics.
     for chrc_path in chrc_paths:
-        process_chrc(chrc_path)
+        process_heartrate_chrc(chrc_path)
 
     global hr_service
     hr_service = (service, service_props, service_path)
@@ -192,7 +259,7 @@ def process_uart_service(service_path, chrc_paths):
 
     # Process the characteristics.
     for chrc_path in chrc_paths:
-        process_chrc(chrc_path)
+        process_uart_chrc(chrc_path)
 
     global hr_service
     hr_service = (service, service_props, service_path)
@@ -206,14 +273,14 @@ def process_battery_service(service_path, chrc_paths):
 
     uuid = service_props['UUID']
 
-    if uuid != BB_BATTERY_UUID:
+    if uuid != SERVICE_BATTERY_UUID:
         return False
 
     print('Blue-Bandit Service found: ' + service_path)
 
     # Process the characteristics.
     for chrc_path in chrc_paths:
-        process_chrc(chrc_path)
+        process_battery_chrc(chrc_path)
 
     global battery_service
     battery_service = (service, service_props, service_path)
@@ -264,21 +331,13 @@ def main():
         done = False
         if process_hr_service(path, chrc_paths):
             print('Heartrate processed')
-            done = False
 
-        if process_uart_service(path, chrc_paths):
-            print('uart processed')
-            done = True
-
-        if process_battery_service(path, chrc_paths):
-            print('battery processed')
-            done = True
-
-        if done:
+        if process_uart_service(path, chrc_paths) or process_battery_service(path, chrc_paths):
+            print('battery or uart processed')
             break
 
-    if not hr_service and not uart_service:
-        print('No service found from {heart rate, xdc_uart, battery}')
+    if not battery_service:
+        print('No battery service found')
         sys.exit(1)
 
     start_client()
