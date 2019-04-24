@@ -14,6 +14,7 @@ target_include_directories(app PRIVATE
 target_sources(app PRIVATE
         src/kernel/cmd/bt-scan.c
         src/kernel/cmd/bt-pose.c
+        src/kernel/cmd/bt-info.c
         src/main.cpp
         src/kernel/ble-terminal/ble-terminal.c
         src/kernel/gatt/bas.c
