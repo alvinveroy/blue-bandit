@@ -17,6 +17,7 @@ target_sources(app PRIVATE
         src/kernel/cmd/bt-info.c
         src/main.cpp
         src/kernel/ble-terminal/ble-terminal.c
+        src/kernel/ble-terminal/service.c
         src/kernel/gatt/bas.c
         src/kernel/gatt/hrs.c
         src/kernel/gatt/cts.c

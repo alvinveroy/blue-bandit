@@ -24,6 +24,8 @@
 #include <kernel/gatt/hrs.h>
 #include <kernel/gatt/bas.h>
 #include <kernel/gatt/cts.h>
+#include <kernel/ble-terminal/service.h>
+
 
 /* Custom Service Variables */
 static struct bt_uuid_128 vnd_uuid = BT_UUID_INIT_128(
@@ -226,27 +228,37 @@ static struct bt_gatt_attr vnd_attrs[] = {
                                BT_GATT_CHRC_INDICATE,
                                BT_GATT_PERM_READ_ENCRYPT |
                                BT_GATT_PERM_WRITE_ENCRYPT,
-                               read_vnd, write_vnd, vnd_value),
+                               read_vnd,
+                               write_vnd,
+                               vnd_value),
         BT_GATT_CCC(vnd_ccc_cfg, vnd_ccc_cfg_changed),
         BT_GATT_CHARACTERISTIC(&vnd_auth_uuid.uuid,
                                BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
                                BT_GATT_PERM_READ_AUTHEN |
                                BT_GATT_PERM_WRITE_AUTHEN,
-                               read_vnd, write_vnd, vnd_value),
+                               read_vnd,
+                               write_vnd,
+                               vnd_value),
         BT_GATT_CHARACTERISTIC(&vnd_long_uuid.uuid, BT_GATT_CHRC_READ |
                                                     BT_GATT_CHRC_WRITE | BT_GATT_CHRC_EXT_PROP,
                                BT_GATT_PERM_READ | BT_GATT_PERM_WRITE |
                                BT_GATT_PERM_PREPARE_WRITE,
-                               read_long_vnd, write_long_vnd, &vnd_long_value),
+                               read_long_vnd,
+                               write_long_vnd,
+                               &vnd_long_value),
         BT_GATT_CEP(&vnd_long_cep),
         BT_GATT_CHARACTERISTIC(&vnd_signed_uuid.uuid, BT_GATT_CHRC_READ |
                                                       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_AUTH,
                                BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
-                               read_signed, write_signed, &signed_value),
+                               read_signed,
+                               write_signed,
+                               &signed_value),
         BT_GATT_CHARACTERISTIC(&vnd_write_cmd_uuid.uuid,
                                BT_GATT_CHRC_WRITE_WITHOUT_RESP,
-                               BT_GATT_PERM_WRITE, NULL,
-                               write_without_rsp_vnd, &vnd_value),
+                               BT_GATT_PERM_WRITE,
+                               NULL,
+                               write_without_rsp_vnd,
+                               &vnd_value),
 };
 
 static struct bt_gatt_service vnd_svc = BT_GATT_SERVICE(vnd_attrs);
@@ -254,7 +266,7 @@ static struct bt_gatt_service vnd_svc = BT_GATT_SERVICE(vnd_attrs);
 static const struct bt_data ad[] = {
         BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
         BT_DATA_BYTES(BT_DATA_UUID16_ALL,
-                      0x0d, 0x18, 0x0f, 0x18, 0x05, 0x18),
+                      0x0d, 0x18, 0x0f, 0x18, 0x05, 0x18, 0x00, 0xbb),
         BT_DATA_BYTES(BT_DATA_UUID128_ALL,
                       0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
                       0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12),
@@ -295,32 +307,20 @@ bt_ready(int err)
     if (err) {
         printk("Bluetooth init failed (err %d)\n", err);
         return;
-    }
+    } else printk("Bluetooth initialized\n");
 
-    printk("Bluetooth initialized\n");
 
     hrs_init(0x01);
     bas_init();
     cts_init();
+    server_uart_init();
+
+
     bt_gatt_service_register(&vnd_svc);
 
-    if (IS_ENABLED(CONFIG_SETTINGS)) {
-        settings_load();
-    }
-
-    if (strcmp(bt_get_name(), "blue-bandit") != 0)
-    {
-        bt_set_name("blue-bandit"); // Just in case a different one was loaded from flash ;)
-        settings_save();
-    }
-
     err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
-    if (err) {
-        printk("Advertising failed to start (err %d)\n", err);
-        return;
-    }
-
-    printk("Advertising successfully started\n");
+    if (err) printk("Advertising failed to start (err %d)\n", err);
+    else     printk("Advertising successfully started\n");
 }
 
 static void
@@ -329,7 +329,6 @@ auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
     char addr[BT_ADDR_LE_STR_LEN];
 
     bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
     printk("Passkey for %s: %06u\n", addr, passkey);
 }
 
@@ -339,12 +338,11 @@ auth_cancel(struct bt_conn *conn)
     char addr[BT_ADDR_LE_STR_LEN];
 
     bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
     printk("Pairing cancelled: %s\n", addr);
 }
 
 static struct bt_conn_auth_cb auth_cb_display = {
-        .passkey_display = NULL,//auth_passkey_display,
+        .passkey_display = NULL,
         .passkey_entry = NULL,
         .cancel = auth_cancel,
 };
@@ -359,7 +357,7 @@ BLETerminal(void)
     bt_ready(0);
 
     bt_conn_cb_register(&conn_callbacks);
-    bt_conn_auth_cb_register(&auth_cb_display);
+    //bt_conn_auth_cb_register(&auth_cb_display);
 
     /* Implement notification. At the moment there is no suitable way
      * of starting delayed work so we do it here
@@ -368,7 +366,10 @@ BLETerminal(void)
         k_sleep(MSEC_PER_SEC);
 
         /* Battery level simulation */
-        bas_notify();
+        int err = 0;
+        if (bas_notify()) printk("battety TX fail\n");
+        if (hrs_notify()) printk("heartrate TX fail\n");
+        if (err = server_uart_tx_notify()) printk("uart TX fail:%d\n", err);
 
         /* Vendor indication simulation */
         if (simulate_vnd) {

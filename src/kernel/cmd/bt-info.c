@@ -12,11 +12,12 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <shell/shell.h>
+#include <settings/settings.h>
 
 #include "bt-scan.h"
 
 
-static void
+static int
 cmd_info(const struct shell * shell, size_t argc, char ** argv)
 {
     // Misc Info
@@ -34,6 +35,18 @@ cmd_info(const struct shell * shell, size_t argc, char ** argv)
         bt_addr_le_to_str(&addrs[i], &addr_strbuf, sizeof(addr_strbuf));
         shell_print(shell, "%s@%s", name, addr_strbuf);
     }
+
+    return 0;
+}
+
+static int
+cmd_save(const struct shell * shell, size_t argc, char ** argv)
+{
+    return settings_save();
 }
 
 SHELL_CMD_REGISTER(bb_info, NULL, "BB Bluetooth Setup", cmd_info);
+
+SHELL_CMD_REGISTER(bb_save, NULL, "Save current Bluetooth Settings", cmd_save);
+
+

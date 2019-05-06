@@ -137,10 +137,13 @@ void main(void)
 {
     // Note: Per documentations bt_set_id_addr should be called before bt_enable. If you want to dynamically change
     //       it, then either fix that code yourself, or call bt_disable, change, then reenable ;)
-    static bt_addr_le_t local_le_address = {BT_ADDR_LE_RANDOM, {0x0d, 0x00, 0x00, 0xd0, 0xfe, 0xca}};
-    settings_load();
+    static bt_addr_le_t local_le_address = {BT_ADDR_LE_PUBLIC, {0x0d, 0x00, 0x00, 0xd0, 0xfe, 0xca}};
+	if (IS_ENABLED(CONFIG_SETTINGS)) settings_load();
+
     bt_set_id_addr(&local_le_address);
     bt_set_name("blue-bandit");
+
+    if (IS_ENABLED(CONFIG_SETTINGS)) settings_save();
 
     int err = bt_enable(NULL);
     if (err) printk("Bluetooth init failed (err %d)\n", err);

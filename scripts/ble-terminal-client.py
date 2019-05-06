@@ -33,8 +33,13 @@ hr_ctrl_pt_chrc = None
 
 
 
-BB_UART_UUID = '0000dc00-0000-1000-8000-00805f9b34fb'
+SERVICE_UART_UUID           = '0000bb00-0000-1000-8000-00805f9b34fb'
+CHARCTR_UART_SERVER_RX_UUID = '0000dc01-0000-1000-8000-00805f9b34fb'
+CHARCTR_UART_SERVER_TX_UUID = '0000dc02-0000-1000-8000-00805f9b34fb'
+
 uart_service = None
+chrc_client_rx = None
+chrc_client_tx = None
 
 
 SERVICE_BATTERY_UUID     = '0000180f-0000-1000-8000-00805f9b34fb'
@@ -143,6 +148,39 @@ def propertyChange_battery_level(iface, changed_props, invalidated_props):
     print('Battery @ %d%%' % value[0])
 
 
+def response_client_rx():
+    print("Client RX updated")
+
+def response_client_tx():
+    print("Client TX updated")
+
+def propertyChange_client_rx(iface, changed_props, invalidated_props):
+    if iface != GATT_CHRC_IFACE:
+        return
+
+    if not len(changed_props):
+        return
+
+    value = changed_props.get('Value', None)
+    if not value:
+        return
+
+    print('Client RX: %s' % ''.join([str(c) for c in value]))
+
+def propertyChange_client_tx(iface, changed_props, invalidated_props):
+    print('Checking if client uart rx changed')
+    if iface != GATT_CHRC_IFACE:
+        return
+
+    if not len(changed_props):
+        return
+
+    value = changed_props.get('Value', None)
+    if not value:
+        return
+
+    print('Client TX: %s' % value[0])
+
 def start_client():
     '''
     # Read the Body Sensor Location value and print it asynchronously.
@@ -162,12 +200,27 @@ def start_client():
                                  dbus_interface=GATT_CHRC_IFACE)
     '''
     # Subscribe to battery notificatios
-    if battery_service:
+    if False and battery_service:
         propertyIF_battery_level = dbus.Interface(chrc_battery_lvl[0], DBUS_PROP_IFACE)
         propertyIF_battery_level.connect_to_signal("PropertiesChanged", propertyChange_battery_level)
         chrc_battery_lvl[0].StartNotify(reply_handler=response_battery_level,
                                         error_handler=generic_error_cb,
                                         dbus_interface=GATT_CHRC_IFACE)
+    if uart_service:
+        propertyIF_client_rx = dbus.Interface(chrc_client_rx[0], DBUS_PROP_IFACE)
+        propertyIF_client_rx.connect_to_signal("PropertiesChanged", propertyChange_client_rx)
+        #chrc_client_rx[0].StartNotify(reply_handler=response_client_rx,
+        #                              error_handler=generic_error_cb,
+        #                              dbus_interface=GATT_CHRC_IFACE)
+
+        propertyIF_client_tx = dbus.Interface(chrc_client_tx[0], DBUS_PROP_IFACE)
+        propertyIF_client_tx.connect_to_signal("PropertiesChanged", propertyChange_client_tx)
+
+        # Subscribe to charactericstic notification
+        print(chrc_client_rx)
+        chrc_client_rx[0].StartNotify(reply_handler=response_client_tx,
+                                      error_handler=generic_error_cb,
+                                      dbus_interface=GATT_CHRC_IFACE)
 
 def process_heartrate_chrc(chrc_path):
     chrc = bus.get_object(BLUEZ_SERVICE_NAME, chrc_path)
@@ -192,20 +245,19 @@ def process_heartrate_chrc(chrc_path):
 
 def process_uart_chrc(chrc_path):
     chrc = bus.get_object(BLUEZ_SERVICE_NAME, chrc_path)
-    chrc_props = chrc.GetAll(GATT_CHRC_IFACE,
-                             dbus_interface=DBUS_PROP_IFACE)
+    chrc_props = chrc.GetAll(GATT_CHRC_IFACE, dbus_interface=DBUS_PROP_IFACE)
 
     uuid = chrc_props['UUID']
 
-    if uuid == HR_MSRMT_UUID:
-        global hr_msrmt_chrc
-        hr_msrmt_chrc = (chrc, chrc_props)
-    elif uuid == BODY_SNSR_LOC_UUID:
-        global body_snsr_loc_chrc
-        body_snsr_loc_chrc = (chrc, chrc_props)
-    elif uuid == HR_CTRL_PT_UUID:
-        global hr_ctrl_pt_chrc
-        hr_ctrl_pt_chrc = (chrc, chrc_props)
+    if uuid == CHARCTR_UART_SERVER_RX_UUID:
+        global chrc_client_tx
+        chrc_client_tx = (chrc, chrc_props)
+        print('processed server rx characteristics')
+    elif uuid == CHARCTR_UART_SERVER_TX_UUID:
+        global chrc_client_rx
+        chrc_client_rx = (chrc, chrc_props)
+        print('processed server tx characteristics')
+        print(chrc_client_rx)
     else:
         print('Unrecognized characteristic: ' + uuid)
 
@@ -252,7 +304,7 @@ def process_uart_service(service_path, chrc_paths):
 
     uuid = service_props['UUID']
 
-    if uuid != BB_UART_UUID:
+    if uuid != SERVICE_UART_UUID:
         return False
 
     print('Blue-Bandit Service found: ' + service_path)
@@ -261,14 +313,15 @@ def process_uart_service(service_path, chrc_paths):
     for chrc_path in chrc_paths:
         process_uart_chrc(chrc_path)
 
-    global hr_service
-    hr_service = (service, service_props, service_path)
+    global uart_service
+    uart_service = (service, service_props, service_path)
 
     return True
 
 
 def process_battery_service(service_path, chrc_paths):
     service = bus.get_object(BLUEZ_SERVICE_NAME, service_path)
+    print(service)
     service_props = service.GetAll(GATT_SERVICE_IFACE, dbus_interface=DBUS_PROP_IFACE)
 
     uuid = service_props['UUID']
@@ -328,16 +381,23 @@ def main():
         #print(interfaces)
         chrc_paths = [d for d in chrcs if d.startswith(path + "/")]
 
-        done = False
+        if process_battery_service(path, chrc_paths):
+            print('battery service processed')
+
         if process_hr_service(path, chrc_paths):
             print('Heartrate processed')
 
-        if process_uart_service(path, chrc_paths) or process_battery_service(path, chrc_paths):
-            print('battery or uart processed')
+        if process_uart_service(path, chrc_paths):
+            print('uart service processed')
             break
+
 
     if not battery_service:
         print('No battery service found')
+
+
+    if not uart_service:
+        print('No UART service found')
         sys.exit(1)
 
     start_client()

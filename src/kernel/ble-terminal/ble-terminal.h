@@ -12,6 +12,9 @@
 // Sections 1-3
 
 
+// GATT Service Definition:
+//      See BT Core spec v5.1 Vol.3 Part G Section 3
+
 int BLETerminal();
 
 #endif
