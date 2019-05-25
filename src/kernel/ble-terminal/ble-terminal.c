@@ -369,7 +369,8 @@ BLETerminal(void)
         int err = 0;
         if (bas_notify()) printk("battety TX fail\n");
         if (hrs_notify()) printk("heartrate TX fail\n");
-        if (err = server_uart_tx_notify()) printk("uart TX fail:%d\n", err);
+        server_uart_tx_notify();
+        //if (err = server_uart_tx_notify()) printk("uart TX fail:%d\n", err);
 
         /* Vendor indication simulation */
         if (simulate_vnd) {

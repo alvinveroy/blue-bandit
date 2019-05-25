@@ -52,9 +52,23 @@ static void server_tx_cfg_changed(const struct bt_gatt_attr *attr, u16_t value)
 static ssize_t server_rx_process(struct bt_conn *conn, const struct bt_gatt_attr *attr,
                                 void *buf, u16_t len, u16_t offset)
 {
-    const char *value = attr->user_data;
 
-    return bt_gatt_attr_read(conn, attr, buf, len, offset, value, sizeof(*value));
+    // Copy into buffer that will be notified back to user
+    if (len < BUF_SIZE)
+    {
+        memcpy(rx_buf, buf, len);
+        rx_buf[len] = '\0';
+        printk("Rx:(%d) %s\n", len, rx_buf);
+
+        // For now, also echo this back on the server TX line
+        // TODO: route shell print commands through here
+        memcpy(tx_buf, buf, len);
+        tx_buf[len] = '\0';
+        return len;
+    } else
+    {
+        return 0;
+    }
 }
 
 static ssize_t server_tx_process(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -62,25 +76,26 @@ static ssize_t server_tx_process(struct bt_conn *conn, const struct bt_gatt_attr
 {
     const char *value = attr->user_data;
 
-    return bt_gatt_attr_read(conn, attr, buf, len, offset, value, sizeof(*value));
+    int nread = bt_gatt_attr_read(conn, attr, buf, len, offset, value, sizeof(*value));
+    printk("Server TX Buf(%d): %s\n", nread, rx_buf);
+    return nread;
 }
 
 /* Battery Service Declaration */
 static struct bt_gatt_attr attrs_uart[] = {
         BT_GATT_PRIMARY_SERVICE(BT_UUID_SERVICE_UART),
         BT_GATT_CHARACTERISTIC(BT_UUID_CHARCTR_RX,
-                               BT_GATT_CHRC_WRITE_WITHOUT_RESP,
-                               BT_GATT_PERM_WRITE,
-                               NULL,
-                               server_rx_process,
-                               &rx_buf),
+                               BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_WRITE_WITHOUT_RESP,
+                               BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+                               NULL, server_rx_process,
+                               NULL),
         BT_GATT_CCC(server_rx_cfg, server_rx_cfg_changed),
         BT_GATT_CHARACTERISTIC(BT_UUID_CHARCTR_TX,
                                BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
                                BT_GATT_PERM_READ,
                                server_tx_process,
                                NULL,
-                               &tx_buf),
+                               NULL),
         BT_GATT_CCC(server_tx_cfg, server_tx_cfg_changed),
 };
 
@@ -98,6 +113,6 @@ server_uart_tx_notify(void)
 {
     if (!server_tx_active) return -1;
 
-    sprintf(tx_buf, "hello %d\n", mcount++);
-    return bt_gatt_notify(NULL, &attrs_uart[4], tx_buf, sizeof(tx_buf));
+    return (bt_gatt_notify(NULL, &attrs_uart[4], tx_buf, strlen(tx_buf))
+          + bt_gatt_notify(NULL, &attrs_uart[1], rx_buf, strlen(rx_buf)));
 }
