@@ -167,19 +167,41 @@ def propertyChange_client_rx(iface, changed_props, invalidated_props):
 
     print('Client RX: %s' % ''.join([str(c) for c in value]))
 
+
+
+count = 0
 def propertyChange_client_tx(iface, changed_props, invalidated_props):
-    print('Checking if client uart rx changed')
     if iface != GATT_CHRC_IFACE:
         return
 
+
     if not len(changed_props):
+        print('Client TX[0]')
         return
+
 
     value = changed_props.get('Value', None)
     if not value:
+        print('Client TX: n/a')
+
+        # Initialize the client TX data on the server
+        data = dbus.ByteArray('Client TX Initialized'.encode('utf8'))
+        chrc_client_tx[0].WriteValue(data, {},
+                                     dbus_interface=GATT_CHRC_IFACE)
+
         return
 
-    print('Client TX: %s' % value[0])
+
+    # Print the current Client TX as noted on the server
+    print('Client TX: %s' % ''.join([str(c) for c in value]))
+
+    # Update what the client TX on the server
+    global count
+    data = dbus.ByteArray('Count = %d'.encode('utf8') % count)
+    chrc_client_tx[0].WriteValue(data, {}, dbus_interface=GATT_CHRC_IFACE)
+    count += 1
+
+
 
 def start_client():
     '''
@@ -209,16 +231,14 @@ def start_client():
     if uart_service:
         propertyIF_client_rx = dbus.Interface(chrc_client_rx[0], DBUS_PROP_IFACE)
         propertyIF_client_rx.connect_to_signal("PropertiesChanged", propertyChange_client_rx)
-        #chrc_client_rx[0].StartNotify(reply_handler=response_client_rx,
-        #                              error_handler=generic_error_cb,
-        #                              dbus_interface=GATT_CHRC_IFACE)
+        chrc_client_rx[0].StartNotify(reply_handler=response_client_rx,
+                                      error_handler=generic_error_cb,
+                                      dbus_interface=GATT_CHRC_IFACE)
 
         propertyIF_client_tx = dbus.Interface(chrc_client_tx[0], DBUS_PROP_IFACE)
         propertyIF_client_tx.connect_to_signal("PropertiesChanged", propertyChange_client_tx)
 
-        # Subscribe to charactericstic notification
-        print(chrc_client_rx)
-        chrc_client_rx[0].StartNotify(reply_handler=response_client_tx,
+        chrc_client_tx[0].StartNotify(reply_handler=response_client_tx,
                                       error_handler=generic_error_cb,
                                       dbus_interface=GATT_CHRC_IFACE)
 
@@ -253,13 +273,11 @@ def process_uart_chrc(chrc_path):
         global chrc_client_tx
         chrc_client_tx = (chrc, chrc_props)
         print('processed server rx characteristics')
-    elif uuid == CHARCTR_UART_SERVER_TX_UUID:
+
+    if uuid == CHARCTR_UART_SERVER_TX_UUID:
         global chrc_client_rx
         chrc_client_rx = (chrc, chrc_props)
         print('processed server tx characteristics')
-        print(chrc_client_rx)
-    else:
-        print('Unrecognized characteristic: ' + uuid)
 
     return True
 
