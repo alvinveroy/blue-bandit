@@ -169,6 +169,10 @@ def propertyChange_client_rx(iface, changed_props, invalidated_props):
 
 
 
+def sendMessage(msg):
+    data = dbus.ByteArray(msg.encode('utf8'))
+    chrc_client_tx[0].WriteValue(data, {}, dbus_interface=GATT_CHRC_IFACE)
+
 count = 0
 def propertyChange_client_tx(iface, changed_props, invalidated_props):
     if iface != GATT_CHRC_IFACE:
@@ -367,6 +371,14 @@ def interfaces_removed_cb(object_path, interfaces):
         mainloop.quit()
 
 
+
+
+def on_input(sender, event):
+    # Send the message over via bluetooth server
+    msg = chr(event.keyval)
+    sendMessage(msg)
+
+
 def main():
     # Set up the main loop.
     DBusGMainLoop(set_as_default=True)
@@ -419,6 +431,13 @@ def main():
         sys.exit(1)
 
     start_client()
+
+
+    # Connect a keyboard listener
+    from gi.repository import Gtk
+    window = Gtk.Window()
+    window.connect('key-release-event', on_input)
+    window.show_all()
 
     mainloop.run()
 
